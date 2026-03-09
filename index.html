@@ -90,6 +90,19 @@
   .tab-btn.active { background: var(--purple); color: var(--white); }
   .tab-btn:hover:not(.active) { color: var(--text); background: rgba(106,13,173,0.15); }
 
+  .tab-btn-create {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 8px 20px; border-radius: 4px;
+    cursor: pointer; transition: all 0.18s ease;
+    background: var(--purple); color: var(--white);
+    border: none;
+    box-shadow: 0 0 14px rgba(106,13,173,0.45);
+  }
+  .tab-btn-create:hover { background: var(--purple-light); box-shadow: 0 0 22px rgba(155,61,232,0.6); transform: translateY(-1px); }
+  .tab-btn-create.active { background: var(--purple-light); box-shadow: 0 0 22px rgba(155,61,232,0.55); }
+
   .header-actions {
     display: flex; align-items: center; gap: 8px;
   }
@@ -479,7 +492,7 @@
   </div>
   <div class="mode-tabs">
     <button class="tab-btn active" id="tab-decks"  onclick="showTab('decks')">Decks</button>
-    <button class="tab-btn"        id="tab-create" onclick="requireDeck('create')">Create</button>
+    <button class="tab-btn-create"  id="tab-create" onclick="openNewDeckModal()">+ Create</button>
     <button class="tab-btn"        id="tab-study"  onclick="requireDeck('study')">Study</button>
   </div>
   <div class="header-actions">
@@ -638,11 +651,12 @@
 
   // ── Tab / View routing ──
   function showTab(tab) {
-    ['decks','create','study'].forEach(v => {
-      document.getElementById('view-'+v).classList.toggle('active', v === tab);
-      const btn = document.getElementById('tab-'+v);
-      if (btn) btn.classList.toggle('active', v === tab);
+    ['decks','study'].forEach(v => {
+      document.getElementById('view-'+v)?.classList.toggle('active', v === tab);
+      document.getElementById('tab-'+v)?.classList.toggle('active', v === tab);
     });
+    // create view toggled separately
+    document.getElementById('view-create').classList.toggle('active', tab === 'create');
 
     if (tab === 'decks') {
       activeDeckId = null;
