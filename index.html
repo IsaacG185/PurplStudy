@@ -97,6 +97,31 @@
     letter-spacing: 0.05em;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-icon {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn-icon:hover { border-color: var(--ink); color: var(--ink); }
+  .btn-icon.upload:hover { border-color: var(--sage); color: var(--sage); }
+
+  #load-input { display: none; }
+
   /* Main content */
   main {
     position: relative;
@@ -531,7 +556,12 @@
     <button class="tab-btn active" onclick="switchMode('create')" id="tab-create">Create</button>
     <button class="tab-btn" onclick="switchMode('study')" id="tab-study">Study</button>
   </div>
-  <div class="card-count" id="card-count">0 cards</div>
+  <div class="header-actions">
+    <span class="card-count" id="card-count">0 cards</span>
+    <button class="btn-icon upload" onclick="document.getElementById('load-input').click()">↑ Load</button>
+    <input type="file" id="load-input" accept=".txt,.tsv" onchange="loadDeck(event)">
+    <button class="btn-icon" onclick="downloadDeck()">↓ Save</button>
+  </div>
 </header>
 
 <main>
@@ -557,12 +587,7 @@
     </div>
 
     <div class="section-label">Your deck</div>
-    <div class="cards-list" id="cards-list">
-      <div class="empty-state" id="empty-state">
-        <p>No cards yet.</p>
-        <span>Add your first card above to get started.</span>
-      </div>
-    </div>
+    <div class="cards-list" id="cards-list"></div>
   </div>
 
   <!-- STUDY MODE -->
@@ -661,17 +686,19 @@
 
   function renderCardList() {
     const list  = document.getElementById('cards-list');
-    const empty = document.getElementById('empty-state');
+
+    // Clear only card items, not the empty-state element
+    list.innerHTML = '';
 
     if (cards.length === 0) {
-      list.innerHTML = '';
-      list.appendChild(empty);
-      empty.style.display = '';
+      list.innerHTML = `
+        <div class="empty-state">
+          <p>No cards yet.</p>
+          <span>Add your first card above to get started.</span>
+        </div>`;
       return;
     }
-    empty.style.display = 'none';
 
-    list.innerHTML = '';
     cards.forEach((card, i) => {
       const item = document.createElement('div');
       item.className = 'card-item';
@@ -784,6 +811,50 @@
     return a;
   }
 
+  function downloadDeck() {
+    if (cards.length === 0) { showToast('No cards to save.'); return; }
+    // Quizlet-compatible format: term\tdefinition, one card per line
+    const lines = cards.map(c => `${c.front}\t${c.back}`);
+    const data  = lines.join('\n');
+    const blob  = new Blob([data], { type: 'text/plain;charset=utf-8' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href      = url;
+    a.download  = 'notecards.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Saved ${cards.length} cards!`);
+  }
+
+  function loadDeck(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const lines = e.target.result.split('\n').filter(l => l.trim());
+        const loaded = lines.map(line => {
+          const tabIdx = line.indexOf('\t');
+          if (tabIdx === -1) return null;
+          return {
+            front: line.slice(0, tabIdx).trim(),
+            back:  line.slice(tabIdx + 1).trim(),
+            id:    Date.now() + Math.random()
+          };
+        }).filter(c => c && c.front && c.back);
+        if (loaded.length === 0) throw new Error();
+        cards = loaded;
+        renderCardList();
+        updateCount();
+        showToast(`Loaded ${cards.length} cards!`);
+      } catch {
+        showToast('Invalid file — could not load.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
   // Keyboard nav
   document.addEventListener('keydown', e => {
     const studyVisible = document.getElementById('study-mode').style.display !== 'none';
@@ -798,11 +869,6 @@
     if (e.key === 'Enter' && e.ctrlKey) addCard();
   });
 
-  // Pre-load a couple of sample cards
-  cards = [
-    { front: 'What is the powerhouse of the cell?', back: 'The mitochondria.', id: 1 },
-    { front: 'What year did the French Revolution begin?', back: '1789', id: 2 },
-  ];
   renderCardList();
   updateCount();
 </script>
