@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — PurplStudy</title>
+<link rel="icon" type="image/png" href="purpl_Study_Logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple:       #6a0dad;
+    --purple-dark:  #4a0880;
+    --purple-light: #9b3de8;
+    --bg:           #0e0817;
+    --surface:      #170d24;
+    --surface2:     #211230;
+    --border:       #3a1f55;
+    --border-light: #5a3380;
+    --text:         #f0e8ff;
+    --text-muted:   #9a80b8;
+    --text-dim:     #5a4470;
+    --red:          #e74c3c;
+  }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  /* Ambient purple glow behind the card */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 600px;
+    background: radial-gradient(ellipse, rgba(106,13,173,0.25) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* The login card */
+  .card {
+    position: relative; z-index: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 44px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+
+  /* Logo at the top of the card */
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem; font-weight: 800;
+    letter-spacing: -0.03em;
+    display: flex; align-items: center; gap: 2px;
+    margin-bottom: 6px; text-decoration: none; color: var(--text);
+  }
+  .logo-purpl { color: var(--purple-light); }
+  .logo-dot {
+    width: 7px; height: 7px;
+    background: var(--purple-light);
+    border-radius: 50%;
+    margin: 0 1px 6px;
+    display: inline-block;
+  }
+
+  .card-sub {
+    font-size: 0.72rem; color: var(--text-muted);
+    margin-bottom: 32px; letter-spacing: 0.03em;
+  }
+
+  /* Tab switcher: Sign In | Create Account */
+  .tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 8px 20px; background: none; border: none;
+    color: var(--text-dim); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: all 0.15s;
+  }
+  .tab.active { color: var(--purple-light); border-bottom-color: var(--purple-light); }
+
+  /* Form sections — only one shown at a time */
+  .form-section { display: none; }
+  .form-section.active { display: block; }
+
+  /* Input fields */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; font-size: 0.62rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 6px;
+  }
+  .field input {
+    font-family: 'DM Mono', monospace; font-size: 0.88rem;
+    width: 100%; padding: 10px 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--purple-light); box-shadow: 0 0 0 3px rgba(106,13,173,0.12); }
+  .field input::placeholder { color: var(--text-dim); }
+
+  /* Error message shown below the form on failed login */
+  .error-msg {
+    font-size: 0.7rem; color: var(--red);
+    margin-bottom: 14px; display: none;
+    padding: 8px 12px; background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.3); border-radius: 5px;
+  }
+  .error-msg.show { display: block; }
+
+  /* Primary submit button */
+  .btn-primary {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+    width: 100%; padding: 11px;
+    background: var(--purple); color: white;
+    border: none; border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; margin-bottom: 12px;
+    box-shadow: 0 0 20px rgba(106,13,173,0.35);
+  }
+  .btn-primary:hover { background: var(--purple-light); box-shadow: 0 0 28px rgba(155,61,232,0.5); }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+
+  /* "or" divider between email login and Google login */
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 16px 0; font-size: 0.62rem; color: var(--text-dim);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Google sign-in button */
+  .btn-google {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.06em;
+    width: 100%; padding: 10px;
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .btn-google:hover { border-color: var(--border-light); background: var(--surface); }
+  .btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* Guest mode link at the bottom */
+  .guest-link {
+    text-align: center; font-size: 0.66rem;
+    color: var(--text-dim); margin-top: 8px;
+  }
+  .guest-link a {
+    color: var(--text-muted); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .guest-link a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Logo -->
+  <a class="logo" href="/">
+    <span class="logo-purpl">Purpl</span><span class="logo-dot"></span>Study
+  </a>
+  <p class="card-sub">Sign in to access your study tools from any device.</p>
+
+  <!-- Sign In / Create Account tab switcher -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Sign In</button>
+    <button class="tab" onclick="switchTab('register')">Create Account</button>
+  </div>
+
+  <!-- Error message (shared, shown above the active form) -->
+  <div class="error-msg" id="error-msg"></div>
+
+  <!-- ── SIGN IN FORM ── -->
+  <div class="form-section active" id="form-login">
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') submitLogin()">
+    </div>
+    <button class="btn-primary" onclick="submitLogin()" id="login-btn">Sign In</button>
+
+    <div class="divider">or</div>
+
+    <!-- Google sign-in button — links directly to the backend route -->
+    <a href="/auth/google" style="text-decoration:none;">
+      <button class="btn-google">
+        <!-- Google "G" logo SVG -->
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Continue with Google
+      </button>
+    </a>
+  </div>
+
+  <!-- ── CREATE ACCOUNT FORM ── -->
+  <div class="form-section" id="form-register">
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="reg-name" placeholder="Your name" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="reg-password" placeholder="At least 6 characters" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter') submitRegister()">
+    </div>
+    <button class="btn-primary" onclick="submitRegister()" id="reg-btn">Create Account</button>
+
+    <div class="divider">or</div>
+
+    <a href="/auth/google" style="text-decoration:none;">
+      <button class="btn-google">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Sign up with Google
+      </button>
+    </a>
+  </div>
+
+  <!-- Guest mode link -->
+  <div class="guest-link">
+    <a onclick="continueAsGuest()">Continue as guest</a>
+    — progress saves to this browser only
+  </div>
+</div>
+
+<script>
+  // Check if there's an error param in the URL (e.g. after a failed Google login)
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('error')) {
+    showError('Google sign-in failed. Please try again.');
+  }
+
+  // Switch between the Sign In and Create Account tabs
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0) === (tab === 'login'));
+    });
+    document.getElementById('form-login').classList.toggle('active', tab === 'login');
+    document.getElementById('form-register').classList.toggle('active', tab === 'register');
+    hideError();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function hideError() {
+    document.getElementById('error-msg').classList.remove('show');
+  }
+
+  // Submit email/password login
+  async function submitLogin() {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) return showError('Please fill in all fields.');
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Signing in...';
+
+    const res  = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      window.location.href = '/'; // Redirect to home on success
+    } else {
+      showError(data.message);
+      btn.disabled = false; btn.textContent = 'Sign In';
+    }
+  }
+
+  // Submit registration form
+  async function submitRegister() {
+    const name     = document.getElementById('reg-name').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!name || !email || !password) return showError('Please fill in all fields.');
+
+    const btn = document.getElementById('reg-btn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+
+    const res  = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      window.location.href = '/';
+    } else {
+      showError(data.message);
+      btn.disabled = false; btn.textContent = 'Create Account';
+    }
+  }
+
+  // Guest mode — set a flag in localStorage and go to the app
+  function continueAsGuest() {
+    localStorage.setItem('purplstudy_guest', 'true');
+    window.location.href = '/';
+  }
+</script>
+</body>
+</html>
